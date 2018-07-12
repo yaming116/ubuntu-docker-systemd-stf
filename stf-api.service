@@ -1,0 +1,21 @@
+[Unit]
+Description=STF api
+After=rethinkdb.service
+BindsTo=rethinkdb.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf:latest
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStart=/usr/bin/docker run --rm \
+  --name %p \
+  -e "SECRET=monkey" \
+  --net host \
+  openstf/stf:latest \
+  stf api --port 3700 \
+  --connect-sub tcp://${COREOS_PRIVATE_IPV4}:7150 \
+  --connect-push tcp://${COREOS_PRIVATE_IPV4}:7170
+ExecStop=-/usr/bin/docker stop -t 10 %p

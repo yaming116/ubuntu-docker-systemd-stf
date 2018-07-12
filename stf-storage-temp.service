@@ -1,0 +1,22 @@
+[Unit]
+Description=STF temp storage
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf:latest
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStartPre=/bin/mkdir -p /mnt/storage
+ExecStartPre=/bin/chmod 777 /mnt/storage
+ExecStart=/usr/bin/docker run --rm \
+  --name %p \
+  -v /mnt/storage:/data \
+  --net host \
+  openstf/stf:latest \
+  stf storage-temp --port 3500 \
+    --save-dir /data
+ExecStop=-/usr/bin/docker stop -t 10 %p

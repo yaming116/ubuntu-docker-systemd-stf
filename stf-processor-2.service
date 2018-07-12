@@ -1,0 +1,20 @@
+[Unit]
+Description=STF processor
+After=rethinkdb.service
+BindsTo=rethinkdb.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf:latest
+ExecStartPre=-/usr/bin/docker kill %p-2
+ExecStartPre=-/usr/bin/docker rm %p-2
+ExecStart=/usr/bin/docker run --rm \
+  --name %p-2 \
+  --net host \
+  openstf/stf:latest \
+  stf processor %p-2 \
+    --connect-app-dealer tcp://${COREOS_PRIVATE_IPV4}:7160 \
+    --connect-dev-dealer tcp://${COREOS_PRIVATE_IPV4}:7260
+ExecStop=-/usr/bin/docker stop -t 10 %p-2

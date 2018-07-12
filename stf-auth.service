@@ -1,0 +1,20 @@
+[Unit]
+Description=STF mock auth
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf:latest
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStart=/usr/bin/docker run --rm \
+  --name %p \
+  -e "SECRET=monkey" \
+  --net host \
+  openstf/stf:latest \
+  stf auth-mock --port 3200 \
+    --app-url http://${COREOS_PRIVATE_IPV4}/
+ExecStop=-/usr/bin/docker stop -t 10 %p

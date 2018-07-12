@@ -1,0 +1,27 @@
+[Unit]
+Description=STF provider
+After=adbd.service
+BindsTo=adbd.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf-armv7l:latest
+ExecStartPre=-/usr/bin/docker kill %p-1
+ExecStartPre=-/usr/bin/docker rm %p-1
+ExecStart=/usr/bin/docker run --rm \
+  --name %p-1 \
+  --net host \
+  openstf/stf-armv7l:latest \
+  stf provider \
+    --name "floor15" \
+    --connect-sub tcp://${COREOS_PRIVATE_IPV4}:7250 \
+    --connect-push tcp://${COREOS_PRIVATE_IPV4}:7270 \
+    --storage-url http://${COREOS_PRIVATE_IPV4}/ \
+    --public-ip ${COREOS_PRIVATE_IPV4} \
+    --min-port=15000 \
+    --max-port=25000 \
+    --heartbeat-interval 10000 \
+    --screen-ws-url-pattern "ws://${COREOS_PRIVATE_IPV4}/d/floor15/<%= serial %>/<%= publicPort %>/"
+ExecStop=-/usr/bin/docker stop -t 10 %p-1

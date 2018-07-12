@@ -1,0 +1,22 @@
+[Unit]
+Description=STF app
+After=rethinkdb.service
+BindsTo=rethinkdb.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull openstf/stf:latest
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStart=/usr/bin/docker run --rm \
+  --name %p \
+  -e "SECRET=monkey" \
+  --net host \
+  openstf/stf:latest \
+  stf app --port 3100 \
+    --auth-url http://${COREOS_PRIVATE_IPV4}/auth/mock/ \
+    --websocket-url ws://${COREOS_PRIVATE_IPV4}/
+ExecStop=-/usr/bin/docker stop -t 10 %p
+

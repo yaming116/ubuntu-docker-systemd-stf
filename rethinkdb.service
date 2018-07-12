@@ -1,0 +1,23 @@
+[Unit]
+Description=RethinkDB
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull rethinkdb:2.3
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStartPre=/bin/mkdir -p /srv/rethinkdb
+ExecStart=/usr/bin/docker run --rm \
+  --name %p \
+  -v /srv/rethinkdb:/data \
+  -e "AUTHKEY=monkey" \
+  --net host \
+  rethinkdb:2.3 \
+  rethinkdb --bind all \
+    --cache-size 8192 \
+    --no-update-check
+ExecStop=-/usr/bin/docker stop -t 10 %p
